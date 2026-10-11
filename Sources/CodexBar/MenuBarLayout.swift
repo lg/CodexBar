@@ -643,7 +643,10 @@ enum MenuBarLayoutBalanceResolver {
             let descriptor = ProviderDescriptorRegistry.descriptor(for: provider)
             let labels = descriptor.presentation.menuBarBalanceDetailLabels
                 ?? (descriptor.metadata.balanceOnly ? ["Balance"] : [])
-            if snapshot?.identity?.providerID == nil || snapshot?.identity?.providerID == provider.instanceID,
+            if let cost = self.prepaidBalanceCost(provider: provider, snapshot: snapshot),
+               let balance = cost.balance
+            { return UsageFormatter.currencyString(balance, currencyCode: cost.currencyCode) }
+            if self.ownsSnapshot(provider: provider, snapshot: snapshot),
                let balance = labels.lazy.compactMap({ snapshot?.detailRow(label: $0)?.value }).first
             { return balance }
             guard descriptor.presentation.menuBarBalanceDetailLabels == nil else { return nil }
@@ -662,11 +665,29 @@ enum MenuBarLayoutBalanceResolver {
         snapshot: UsageSnapshot?)
         -> (remaining: Double?, used: Double?)
     {
-        // Provider-specific by design: only OpenRouter reports credit amounts in its "Credits" detail rows.
-        guard provider == .openrouter else { return (nil, nil) }
+        // Provider-specific by design: OpenRouter reports credit amounts in its "Credits" detail rows.
+        guard provider == .openrouter else {
+            guard let cost = self.prepaidBalanceCost(provider: provider, snapshot: snapshot),
+                  cost.currencyCode.caseInsensitiveCompare("USD") == .orderedSame
+            else { return (nil, nil) }
+            return (cost.balance, nil)
+        }
         return (
             self.amount(snapshot?.detailRow(label: "Remaining")?.value),
             self.amount(snapshot?.detailRow(label: "Used")?.value))
+    }
+
+    /// Providers declaring `menuBarBalanceUsesPrepaidCost` get the Balance token without a case above.
+    private static func prepaidBalanceCost(provider: UsageProvider, snapshot: UsageSnapshot?) -> ProviderCostSnapshot? {
+        guard ProviderDescriptorRegistry.descriptor(for: provider).presentation.menuBarBalanceUsesPrepaidCost,
+              self.ownsSnapshot(provider: provider, snapshot: snapshot),
+              let cost = snapshot?.providerCost, cost.balance != nil
+        else { return nil }
+        return cost
+    }
+
+    private static func ownsSnapshot(provider: UsageProvider, snapshot: UsageSnapshot?) -> Bool {
+        snapshot?.identity?.providerID == nil || snapshot?.identity?.providerID == provider.instanceID
     }
 
     private static func amount(_ text: String?) -> Double? {

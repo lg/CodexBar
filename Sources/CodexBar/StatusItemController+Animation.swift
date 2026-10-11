@@ -889,7 +889,7 @@ extension StatusItemController {
         case .mimo: snapshot?.primary == nil || preference == .secondary
         case .opencodego, .devpass: snapshot?.primary == nil && snapshot?.secondary == nil
         case .mistral: self.menuBarMetricWindow(for: provider, snapshot: snapshot, now: now) == nil
-        default: true
+        default: !ProviderDescriptorRegistry.descriptor(for: provider).presentation.menuBarBalanceUsesPrepaidCost
         }
         if usesBalance, let balance = MenuBarLayoutBalanceResolver.balance(provider: provider, snapshot: snapshot) {
             return balance
