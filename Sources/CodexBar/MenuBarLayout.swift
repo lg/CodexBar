@@ -607,7 +607,8 @@ enum MenuBarLayoutBalanceResolver {
     static func balance(
         provider: UsageProvider,
         snapshot: UsageSnapshot?,
-        codexCredits: CreditsSnapshot? = nil)
+        codexCredits: CreditsSnapshot? = nil,
+        showsOptionalCredits: Bool = true)
         -> String?
     {
         // Provider-specific by design: shared extraction for stored layouts, previews, and legacy text.
@@ -643,9 +644,13 @@ enum MenuBarLayoutBalanceResolver {
             let descriptor = ProviderDescriptorRegistry.descriptor(for: provider)
             let labels = descriptor.presentation.menuBarBalanceDetailLabels
                 ?? (descriptor.metadata.balanceOnly ? ["Balance"] : [])
-            if let cost = self.prepaidBalanceCost(provider: provider, snapshot: snapshot),
-               let balance = cost.balance
-            { return UsageFormatter.currencyString(balance, currencyCode: cost.currencyCode) }
+            let prepaid = self.prepaidBalanceCost(
+                provider: provider,
+                snapshot: snapshot,
+                showsOptionalCredits: showsOptionalCredits)
+            if let prepaid, let balance = prepaid.balance {
+                return UsageFormatter.currencyString(balance, currencyCode: prepaid.currencyCode)
+            }
             if self.ownsSnapshot(provider: provider, snapshot: snapshot),
                let balance = labels.lazy.compactMap({ snapshot?.detailRow(label: $0)?.value }).first
             { return balance }
@@ -662,13 +667,17 @@ enum MenuBarLayoutBalanceResolver {
     /// structured to read instead.
     static func balanceAmountsUSD(
         provider: UsageProvider,
-        snapshot: UsageSnapshot?)
+        snapshot: UsageSnapshot?,
+        showsOptionalCredits: Bool = true)
         -> (remaining: Double?, used: Double?)
     {
         // Provider-specific by design: OpenRouter reports credit amounts in its "Credits" detail rows.
         guard provider == .openrouter else {
-            guard let cost = self.prepaidBalanceCost(provider: provider, snapshot: snapshot),
-                  cost.currencyCode.caseInsensitiveCompare("USD") == .orderedSame
+            let prepaid = self.prepaidBalanceCost(
+                provider: provider,
+                snapshot: snapshot,
+                showsOptionalCredits: showsOptionalCredits)
+            guard let cost = prepaid, cost.currencyCode.caseInsensitiveCompare("USD") == .orderedSame
             else { return (nil, nil) }
             return (cost.balance, nil)
         }
@@ -677,9 +686,16 @@ enum MenuBarLayoutBalanceResolver {
             self.amount(snapshot?.detailRow(label: "Used")?.value))
     }
 
-    /// Providers declaring `menuBarBalanceUsesPrepaidCost` get the Balance token without a case above.
-    private static func prepaidBalanceCost(provider: UsageProvider, snapshot: UsageSnapshot?) -> ProviderCostSnapshot? {
-        guard ProviderDescriptorRegistry.descriptor(for: provider).presentation.menuBarBalanceUsesPrepaidCost,
+    /// Providers declaring `menuBarBalanceUsesPrepaidCost` get the Balance token without a case above. Like the
+    /// provider's menu card, the amount follows the optional credits setting, even for a retained snapshot.
+    private static func prepaidBalanceCost(
+        provider: UsageProvider,
+        snapshot: UsageSnapshot?,
+        showsOptionalCredits: Bool)
+        -> ProviderCostSnapshot?
+    {
+        guard showsOptionalCredits,
+              ProviderDescriptorRegistry.descriptor(for: provider).presentation.menuBarBalanceUsesPrepaidCost,
               self.ownsSnapshot(provider: provider, snapshot: snapshot),
               let cost = snapshot?.providerCost, cost.balance != nil
         else { return nil }

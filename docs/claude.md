@@ -291,8 +291,9 @@ the cookie import.
   - Daily Routines extra window when returned by the usage API.
   - Extra usage spend/limit (if enabled). Compact Overview keeps this section when no measured quota bars exist, including Enterprise accounts with unavailable limits.
   - Remaining Usage credits balance (if enabled). Custom menu bar layouts can show it with the **Balance** element
-    beside the quota windows; the default menu bar text keeps showing quota. A fresh snapshot without a successful
-    prepaid credits response has no balance, while a failed refresh keeps the last snapshot and its balance.
+    beside the quota windows; the default menu bar text keeps showing quota. Turning off **Show credits & extra
+    usage** hides it from the menu card and the Balance element immediately. Otherwise a fresh snapshot without a
+    successful prepaid credits response has no balance, while a failed refresh keeps the last snapshot and its balance.
   - Account email + inferred plan.
   - Limit Reset Credits (see below).
 - A Cloudflare challenge on `claude.ai` is a network-path restriction, not a stale-cookie signal. CodexBar keeps the

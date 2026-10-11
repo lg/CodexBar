@@ -213,7 +213,8 @@ extension StatusItemController {
         let costs = self.menuBarLayoutCosts(provider: provider, now: now)
         let balanceAmounts = MenuBarLayoutBalanceResolver.balanceAmountsUSD(
             provider: provider,
-            snapshot: snapshot)
+            snapshot: snapshot,
+            showsOptionalCredits: self.settings.showOptionalCreditsAndExtraUsage)
         let codexCredits = self.menuBarLayoutCodexCredits(
             provider: provider,
             snapshot: snapshot,
@@ -240,7 +241,8 @@ extension StatusItemController {
             automaticText: Self.menuBarLayoutAutomaticText(
                 provider: provider,
                 snapshot: snapshot,
-                automatic: automatic),
+                automatic: automatic,
+                showsOptionalCredits: self.settings.showOptionalCreditsAndExtraUsage),
             sessionPace: self.store.menuBarLayoutPaceText(
                 provider: provider,
                 window: windows.session,
@@ -261,7 +263,8 @@ extension StatusItemController {
             balance: MenuBarLayoutBalanceResolver.balance(
                 provider: provider,
                 snapshot: snapshot,
-                codexCredits: codexCredits),
+                codexCredits: codexCredits,
+                showsOptionalCredits: self.settings.showOptionalCreditsAndExtraUsage),
             costToday: costs.today,
             cost30d: costs.last30Days,
             metrics: MenuBarLayoutRenderMetrics(
