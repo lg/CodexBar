@@ -5,7 +5,7 @@ import Vortex
 
 @MainActor
 final class ScreenConfettiOverlayController {
-    private static let overlayLifetime: TimeInterval = 5
+    private static let overlayLifetime: TimeInterval = 8.5
 
     private let logger = CodexBarLog.logger(LogCategories.confetti)
     private var windows: [NSWindow] = []
@@ -234,12 +234,12 @@ private struct ScreenConfettiOverlayView: View {
             emissionLimit: 42,
             emissionDuration: 0.08,
             idleDuration: 10,
-            lifespan: 4.2,
+            lifespan: 8,
             speed: 0.72,
             speedVariation: 0.44,
             angleRange: .degrees(360),
             acceleration: [0, 0.32],
-            dampingFactor: 0.18,
+            dampingFactor: 0.34,
             angularSpeed: [0, 0, 3],
             angularSpeedVariation: [2, 2, 14],
             colors: .random(resolvedColors),
